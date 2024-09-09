@@ -2,7 +2,7 @@
 % Please edit documentation in R/updateResults.R
 \name{updateResults}
 \alias{updateResults}
-\title{Title}
+\title{Udate Results from File Browser}
 \usage{
 updateResults(resultsfile, linkdir)
 }
@@ -12,10 +12,10 @@ updateResults(resultsfile, linkdir)
 \item{linkdir}{symlink directory that has been validated}
 }
 \value{
-dataframe with new "Species" column that contains the verifed species
+dataframe with new "Species" column that contains the verified species
 }
 \description{
-Title
+Udate Results from File Browser
 }
 \examples{
 \dontrun{
