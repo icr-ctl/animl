@@ -41,7 +41,7 @@ loadModel <- function(model_path, class_file, device=NULL){
 #' @examples
 #' \dontrun{animals <- predictSpecies(animals, classifier[[1]], classifier[[2]], raw=FALSE)}
 predictSpecies <- function(detections, model, classes, device=NULL, out_file=NULL,
-                           file_col='Frame', crop=TRUE, resize=as.integer(299), standardize=TRUE,
+                           file_col='Frame', crop=TRUE, resize_width=299, resize_height=299, normalize=TRUE,
                            batch_size=1, workers=1, channel_last=FALSE, raw=FALSE){
   
   # check if animl-py is available
@@ -49,7 +49,6 @@ predictSpecies <- function(detections, model, classes, device=NULL, out_file=NUL
   else{ stop('animl-py environment must be loaded first via reticulate')}
   
   animl_py$predict_species(detections, model, classes, device=device, out_file=out_file,
-                           file_col=file_col, crop=crop, resize=resize, standardize=standardize,
-                           batch_size=as.integer(batch_size), workers=as.integer(workers), 
-                           channel_last=channel_last, raw=raw)
+                           file_col=file_col, crop=crop, resize_width=299, resize_height=299, normalize=normalize,
+                           batch_size=as.integer(batch_size), workers=as.integer(workers), raw=raw)
 }
