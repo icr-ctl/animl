@@ -16,7 +16,7 @@ megadetector <- function(model_path, device=NULL){
   else{
     stop('animl-py environment must be loaded first via reticulate')
   }
-  animl_py$megadetector$MegaDetector("/mnt/machinelearning/megaDetector/md_v5a.0.0.pt", device=device)
+  animl_py$megadetector$MegaDetector(model_path, device=device)
 }
 
 

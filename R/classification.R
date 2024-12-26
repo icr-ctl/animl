@@ -3,19 +3,20 @@
 #' @param model_path path to model
 #' @param class_file path to class list
 #' @param device send model to the specified device
+#' @param architecture 
 #'
 #' @return list of c(classifier, class_list)
 #' @export
 #'
 #' @examples
 #' \dontrun{andes <- loadModel('andes_v1.pt','andes_classes.csv')}
-loadModel <- function(model_path, class_file, device=NULL){
+load_model <- function(model_path, class_file, device=NULL, architecture="CTL"){
   if(reticulate::py_module_available("animl")){
     animl_py <- reticulate::import("animl")
   }
   else{ stop('animl-py environment must be loaded first via reticulate') }
   
-  animl_py$load_model(model_path, class_file, device=device)
+  animl_py$load_model(model_path, class_file, device=device, architecture=architecture)
 }
 
 
@@ -28,21 +29,21 @@ loadModel <- function(model_path, class_file, device=NULL){
 #' @param out_file path to csv to save results to
 #' @param file_col column in manifest containing file paths
 #' @param crop use bbox to crop images before feeding into model
-#' @param resize model expected dimensions
-#' @param standardize standardize color
 #' @param batch_size batch size for generator 
 #' @param workers number of processes 
-#' @param channel_last change matrix to BxWxHxC
 #' @param raw output raw logits in addition to manifest
+#' @param resize_width 
+#' @param resize_height 
+#' @param normalize 
 #'
 #' @return detection manifest with added prediction and confidence columns
 #' @export
 #'
 #' @examples
 #' \dontrun{animals <- predictSpecies(animals, classifier[[1]], classifier[[2]], raw=FALSE)}
-predictSpecies <- function(detections, model, classes, device=NULL, out_file=NULL,
-                           file_col='Frame', crop=TRUE, resize_width=299, resize_height=299, normalize=TRUE,
-                           batch_size=1, workers=1, channel_last=FALSE, raw=FALSE){
+predict_species <- function(detections, model, classes, device='cpu', out_file=NULL, raw=FALSE,
+                           file_col='Frame', crop=TRUE, resize_width=299, resize_height=299,
+                           normalize=TRUE, batch_size=1, workers=1){
   
   # check if animl-py is available
   if(reticulate::py_module_available("animl")){ animl_py <- reticulate::import("animl")}

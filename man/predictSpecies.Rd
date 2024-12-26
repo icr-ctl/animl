@@ -12,8 +12,9 @@ predictSpecies(
   out_file = NULL,
   file_col = "Frame",
   crop = TRUE,
-  resize = as.integer(299),
-  standardize = TRUE,
+  resize_width = 299,
+  resize_height = 299,
+  normalize = TRUE,
   batch_size = 1,
   workers = 1,
   channel_last = FALSE,
@@ -35,10 +36,6 @@ predictSpecies(
 
 \item{crop}{use bbox to crop images before feeding into model}
 
-\item{resize}{model expected dimensions}
-
-\item{standardize}{standardize color}
-
 \item{batch_size}{batch size for generator}
 
 \item{workers}{number of processes}
@@ -46,6 +43,10 @@ predictSpecies(
 \item{channel_last}{change matrix to BxWxHxC}
 
 \item{raw}{output raw logits in addition to manifest}
+
+\item{resize}{model expected dimensions}
+
+\item{standardize}{standardize color}
 }
 \value{
 detection manifest with added prediction and confidence columns
