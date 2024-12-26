@@ -98,16 +98,28 @@ remove_link <- function(manifest, link_col='Link'){
 }
 
 
-#' Title
+#' Udate Results from File Browser
 #'
-#' @param manifest 
-#' @param link_dir 
-#' @param unique_name 
+#' @param resultsfile final results file with predictions, expects a "UniqueName" column
+#' @param linkdir symlink directory that has been validated
 #'
-#' @return
+#' @return dataframe with new "Species" column that contains the verified species
 #' @export
 #'
 #' @examples
+#' \dontrun{
+#' results <- updateResults(resultsfile, linkdir)
+#' }
 update_labels <- function(manifest, link_dir, unique_name='UniqueName'){
+  if (!dir.exists(link_dir)) {stop("The given directory does not exist.")}
+  if (!unique_name %in% names(manifest)) {stop("Manifest does not have unique names, cannot match to sorted directories.")}
   
+  FilePath <- list.files(link_dir, recursive = TRUE, include.dirs = TRUE)
+  files <- data.frame(FilePath)
+  
+  files[unique_name] <- sapply(files$FilePath,function(x)strsplit(x,"/")[[1]][2])
+  files$label <- sapply(files$FilePath,function(x)strsplit(x,"/")[[1]][1])
+  
+  corrected <- merge(results, files, by=unique_name)
+  return(corrected)
 }

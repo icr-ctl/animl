@@ -16,7 +16,7 @@ device <- 'cuda:0'
 imagedir <- "/home/kyra/animl-py/examples/Southwest"
 
 #create global variable file and directory names
-workingDirectory(imagedir,globalenv())
+WorkingDirectory(imagedir,globalenv())
 
 # Build file manifest for all images and videos within base directory
 files <- buildFileManifest(imagedir, outfile = filemanifest, exif = TRUE)

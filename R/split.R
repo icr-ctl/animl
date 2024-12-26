@@ -9,8 +9,8 @@
 #' \dontrun{
 #' empty <- getEmpty(imagesall)
 #' }
-getEmpty <- function(manifest) {
-  if (!is(manifest, "data.frame")) { stop("'allframes' must be Data Frame")}
+get_empty <- function(manifest) {
+  if (!is(manifest, "data.frame")) { stop("'manifest' must be Data Frame")}
   
   empty <- manifest[manifest$category != 1, ]
 
@@ -35,7 +35,7 @@ getEmpty <- function(manifest) {
     empty[empty$category == 3, ]$prediction <- "vehicle"
     empty$confidence[empty$category == 3] <- empty$conf[empty$category == 3]
   }
-  empty
+  return(empty)
 }
 
 
@@ -50,7 +50,7 @@ getEmpty <- function(manifest) {
 #' \dontrun{
 #' animals <- getAnimals(imagesall)
 #' }
-getAnimals <- function(manifest){
+get_animals <- function(manifest){
   if (!is(manifest, "data.frame")) { stop("'manifest' must be Data Frame")}
   return(manifest[manifest$category==1,])
 }

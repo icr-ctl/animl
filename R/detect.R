@@ -36,7 +36,7 @@ megadetector <- function(model_path, device=NULL){
 #'
 #' @examples
 #' \dontrun{mdres <- detectMD_batch(md_py, allframes$Frame)}
-detectMD_batch <- function(detector, image_file_names, checkpoint_path=NULL, checkpoint_frequency=-1,
+detect_MD_batch <- function(detector, image_file_names, checkpoint_path=NULL, checkpoint_frequency=-1,
                           confidence_threshold=0.1, quiet=TRUE, image_size=NULL, file_col='Frame'){
   if(reticulate::py_module_available("animl")){
     animl_py <- reticulate::import("animl")
@@ -52,10 +52,12 @@ detectMD_batch <- function(detector, image_file_names, checkpoint_path=NULL, che
 
 #' parse MD results into a simple dataframe
 #'
+#' @param results json output from megadetector
 #' @param manifest dataframe containing all frames
-#' @param mdresults raw MegaDetector output
-#' @param outfile file path to save dataframe to
+#' @param out_file path to save dataframe
 #' @param buffer percentage buffer to move bbox away from image edge
+#' @param threshold 
+#' @param file_col 
 #' 
 #' @return original dataframe including md results
 #' @export
@@ -64,7 +66,7 @@ detectMD_batch <- function(detector, image_file_names, checkpoint_path=NULL, che
 #' \dontrun{
 #' mdresults <- parseMD(mdres)
 #' }
-parseMD <- function(mdresults, manifest = NULL, outfile = NULL, buffer=0.02) {
+parse_MD <- function(results, manifest = NULL, out_file = NULL, buffer=0.02, threshold=0, file_col="Frame") {
   if (checkFile(outfile)) { return(loadData(outfile))}
   
   if (!is(mdresults, "list")) { stop("MD results input must be list") }
@@ -73,34 +75,39 @@ parseMD <- function(mdresults, manifest = NULL, outfile = NULL, buffer=0.02) {
     f <- function(data) {
       if (length(data$detections) > 0) {
           x <- data.frame()
-          for(i in data$detections){
-            x <- rbind(x, data.frame(file=data$file, category=i$category, conf=i$conf, 
-                                     bbox1 = i$bbox1, bbox2=i$bbox2, bbox3=i$bbox3, bbox4=i$bbox4, stringsAsFactors = F))
+          for(detection in data$detections){
+            if (detection$conf > threshold){
+                x <- rbind(x, data.frame(file=data$file,
+                                         max_detection_conf= data$max_detection_conf,
+                                         category = detection$category, conf = detection$conf, 
+                                         bbox1 = detection$bbox1, bbox2 = detection$bbox2, 
+                                         bbox3 = detection$bbox3, bbox4 = detection$bbox4, 
+                                         stringsAsFactors = F))
+            }
           }
           return(x)
       } 
       else {
-        return(data.frame(file = data$file, category = 0, conf = 1, 
-                   bbox1 = NA, bbox2 = NA, bbox3 = NA, bbox4 = NA, stringsAsFactors = F))
+        return(data.frame(file = data$file, max_detection_conf:data$max_detection_conf,
+                          category = 0, conf = NA, 
+                          bbox1 = NA, bbox2 = NA, 
+                          bbox3 = NA, bbox4 = NA, 
+                          stringsAsFactors = F))
       }
     }
     
-    results <- do.call(rbind.data.frame, sapply(mdresults, f, simplify = F))
-    results$bbox1[results$bbox1 > 1-buffer] <- 1-buffer
-    results$bbox2[results$bbox2 > 1-buffer] <- 1-buffer
-    results$bbox3[results$bbox3 > 1-buffer] <- 1-buffer
-    results$bbox4[results$bbox4 > 1-buffer] <- 1-buffer
+    df <- do.call(rbind.data.frame, sapply(results, f, simplify = F))
     
-    results$bbox1[results$bbox1 < buffer] <- buffer
-    results$bbox2[results$bbox2 < buffer] <- buffer
-    results$bbox3[results$bbox3 < buffer] <- buffer
-    results$bbox4[results$bbox4 < buffer] <- buffer
+    df$bbox1 <- min(max(df$bbox1, buffer), 1 - buffer)
+    df$bbox2 <- min(max(df$bbox2, buffer), 1 - buffer)
+    df$bbox3 <- min(max(df$bbox3, buffer), 1 - buffer)
+    df$bbox4 <- min(max(df$bbox4, buffer), 1 - buffer)
     
-    # merge to dataframe if given
-    if (!is.null(manifest)) { results <- merge(manifest, results, by.x="Frame",by.y="file") } 
+    # merge to manifest if given
+    if (!is.null(manifest)) { df <- merge(manifest, df, by.x=file_col, by.y="file") } 
 
     # Save file
-    if (!is.null(outfile)) { saveData(results, outfile)}
+    if (!is.null(out_file)) { saveData(df, out_file)}
 
     return(results) 
   }

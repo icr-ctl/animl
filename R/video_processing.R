@@ -3,8 +3,8 @@
 #' This function can take
 #'
 #' @param files dataframe of videos
-#' @param outdir directory to save frames to
-#' @param outfile file to which results will be saved
+#' @param out_dir directory to save frames to
+#' @param out_file file to which results will be saved
 #' @param fps frames per second, otherwise determine mathematically
 #' @param frames number of frames to sample
 #' @param parallel Toggle for parallel processing, defaults to FALSE
@@ -16,13 +16,13 @@
 #'
 #' @examples
 #' \dontrun{
-#' frames <- extractFrames(videos, outdir = "C:\\Users\\usr\\Videos\\", frames = 5)
+#' frames <- extractFrames(videos, out_dir = "C:\\Users\\usr\\Videos\\", frames = 5)
 #' }
-extractFrames <- function(files, outdir = tempfile(), outfile = NULL,
-                          fps = NULL, frames = NULL, parallel = FALSE, 
-                          workers = 1, checkpoint = 1000) {
+extract_frames <- function(files, out_dir = tempfile(), out_file = NULL,
+                          fps = NULL, frames = NULL, file_col="FilePath", 
+                          parallel = FALSE, workers = 1, checkpoint = 1000) {
 
-  if (checkFile(outfile)) { return(loadData(outfile)) } 
+  if (checkFile(out_file)) { return(loadData(out_file)) } 
   
   #check if input is dataframe
   if (is(files, "data.frame")) { 
@@ -34,8 +34,8 @@ extractFrames <- function(files, outdir = tempfile(), outfile = NULL,
   else if (is(files, "character") & length(files) > 0) {  filelist <- files }
   else { stop("Error: Expect 'files' to be Data Frame or vector of filepaths.") }
   
-  if (outdir != "" & !dir.exists(outdir)) {
-    if (!dir.create(outdir, recursive = TRUE)) { stop("Output directory invalid.\n") }
+  if (out_dir != "" & !dir.exists(out_dir)) {
+    if (!dir.create(out_dir, recursive = TRUE)) { stop("Output directory invalid.\n") }
   }
   if (!is.null(fps) & !is.null(frames)) { message("If both fps and frames are defined fps will be used.") }
   if (is.null(fps) & is.null(frames)) { stop("Either fps or frames need to be defined.") }
@@ -45,13 +45,13 @@ extractFrames <- function(files, outdir = tempfile(), outfile = NULL,
     type <- "PSOCK"
     pbapply::pboptions(use_lb=TRUE)
     cl <- parallel::makeCluster(min(parallel::detectCores(), workers), type = type)
-    parallel::clusterExport(cl, list("outdir", "format", "fps", "frames"), envir = environment())
+    parallel::clusterExport(cl, list("out_dir", "format", "fps", "frames"), envir = environment())
 
     parallel::clusterSetRNGStream(cl)
 
     parallel::clusterEvalQ(cl, library(av))
     results <- pbapply::pblapply(filelist, function(x) {
-      try(extractFramesSingle(x, outdir, fps=fps, frames=frames)) }, cl = cl)
+      try(extractFramesSingle(x, out_dir, fps=fps, frames=frames)) }, cl = cl)
     parallel::stopCluster(cl)
     pbapply::pboptions(use_lb=FALSE)
     results <- do.call(rbind, results)
@@ -60,12 +60,12 @@ extractFrames <- function(files, outdir = tempfile(), outfile = NULL,
     pb <- pbapply::startpb(1, nrow(videos))
     results <- data.frame(FilePath = character(), Frame = character())
     for(i in 1:nrow(videos)){
-      result <- extractFramesSingle(videos[i,]$FilePath, outdir, fps=fps, frames=frames)
+      result <- extractFramesSingle(videos[i,]$FilePath, out_dir, fps=fps, frames=frames)
       results <- rbind(results,result)
      
       # checkpoint
-      if (!is.null(outfile) & (i %% checkpoint) == 0) {
-        save(results, file = outfile)
+      if (!is.null(out_file) & (i %% checkpoint) == 0) {
+        save(results, file = out_file)
       }
       pbapply::setpb(pb, i) 
     }
@@ -79,7 +79,7 @@ extractFrames <- function(files, outdir = tempfile(), outfile = NULL,
   }
   else { allframes <- results }
   # save frames to files
-  if(!is.null(outfile)) { saveData(allframes, outfile) }
+  if(!is.null(out_file)) { saveData(allframes, out_file) }
 
   allframes
 }
@@ -87,8 +87,8 @@ extractFrames <- function(files, outdir = tempfile(), outfile = NULL,
 
 #' Extract Frames for Single Video
 #'
-#' @param x filepath to image
-#' @param outdir directory to save frames to
+#' @param file_path filepath to image
+#' @param out_dir directory to save frames to
 #' @param fps number of frames per second to save
 #' @param frames number of frames evenly distributed to save
 #'
@@ -97,18 +97,18 @@ extractFrames <- function(files, outdir = tempfile(), outfile = NULL,
 #'
 #' @examples
 #' \dontrun{
-#' result <- extractFramesSingle(video$FilePath, outdir, frames=3)
+#' result <- extractFramesSingle(video$FilePath, out_dir, frames=3)
 #' }
-extractFramesSingle <- function(x, outdir, fps=NULL, frames=NULL) {
+extract_frame_single <- function(file_path, out_dir, fps=NULL, frames=NULL) {
   result <- tryCatch(
-    { data <- av::av_media_info(x) },
+    { data <- av::av_media_info(file_path) },
     error = function(e) {
       message(e)
       return(NA)
     }
   )
   if (result$video$frames < 5) { 
-    files <- data.frame(FilePath = x, Frame = "File Corrupt")
+    files <- data.frame(FilePath = file_path, Frame = "File Corrupt")
   } 
   else {
     vfilter <- ifelse(length(frames), paste0("fps=", round(1 / (result$duration / (frames-1)), 3)), "null")
@@ -116,18 +116,22 @@ extractFramesSingle <- function(x, outdir, fps=NULL, frames=NULL) {
     framerate <- result$video$framerate
     tempdir <- tempfile()
     dir.create(tempdir)
-    name <- strsplit(basename(x), ".", fixed = T)[[1]][1]
+    name <- strsplit(basename(file_path), ".", fixed = T)[[1]][1]
     rnd <- sprintf("%05d", round(stats::runif(1, 1, 99999), 0))
     #always extract first frame
     output <- file.path(tempdir, paste0(name, "_", rnd, "_00000", ".jpg"))
-    av::av_encode_video(input = x, output = output, framerate = framerate, vfilter = "select=eq(n\\,0)", verbose = F)
-    first <- data.frame(FilePath = x, tmpframe = list.files(tempdir, pattern = paste0(name, "_", rnd, "_00000", ".jpg"), full.names = TRUE), stringsAsFactors = F)
+    av::av_encode_video(input = file_path, output = output, framerate = framerate, vfilter = "select=eq(n\\,0)", verbose = F)
+    first <- data.frame(FilePath = file_path, 
+                        tmpframe = list.files(tempdir, pattern = paste0(name, "_", rnd, "_00000", ".jpg"), full.names = TRUE), 
+                        stringsAsFactors = F)
     #extract remaining frames
     output <- file.path(tempdir, paste0(name, "_", rnd, "_%5d", ".jpg"))
-    av::av_encode_video(input = x, output = output, framerate = framerate, vfilter = vfilter, verbose = F)
-    files <- data.frame(FilePath = x, tmpframe = list.files(tempdir, pattern = paste0(name, "_", rnd, "_\\d{5}", ".jpg"), full.names = TRUE), stringsAsFactors = F)
+    av::av_encode_video(input = file_path, output = output, framerate = framerate, vfilter = vfilter, verbose = F)
+    files <- data.frame(FilePath = file_path, 
+                        tmpframe = list.files(tempdir, pattern = paste0(name, "_", rnd, "_\\d{5}", ".jpg"), full.names = TRUE), 
+                        stringsAsFactors = F)
 
-    files$Frame <- paste0(outdir, basename(files$tmpframe))
+    files$Frame <- paste0(out_dir, basename(files$tmpframe))
     file.copy(files$tmpframe, files$Frame)
     file.remove(files$tmpframe)
     files[, c("FilePath", "Frame")]

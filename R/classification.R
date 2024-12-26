@@ -27,14 +27,14 @@ load_model <- function(model_path, class_file, device=NULL, architecture="CTL"){
 #' @param classes data.frame of classes
 #' @param device send model to the specified device
 #' @param out_file path to csv to save results to
+#' @param raw output raw logits in addition to manifest
 #' @param file_col column in manifest containing file paths
 #' @param crop use bbox to crop images before feeding into model
+#' @param resize_width image width input size
+#' @param resize_height image height input size
+#' @param normalize normalize the tensor before inference
 #' @param batch_size batch size for generator 
 #' @param workers number of processes 
-#' @param raw output raw logits in addition to manifest
-#' @param resize_width 
-#' @param resize_height 
-#' @param normalize 
 #'
 #' @return detection manifest with added prediction and confidence columns
 #' @export
@@ -49,7 +49,7 @@ predict_species <- function(detections, model, classes, device='cpu', out_file=N
   if(reticulate::py_module_available("animl")){ animl_py <- reticulate::import("animl")}
   else{ stop('animl-py environment must be loaded first via reticulate')}
   
-  animl_py$predict_species(detections, model, classes, device=device, out_file=out_file,
-                           file_col=file_col, crop=crop, resize_width=299, resize_height=299, normalize=normalize,
-                           batch_size=as.integer(batch_size), workers=as.integer(workers), raw=raw)
+  animl_py$predict_species(detections, model, classes, device=device, out_file=out_file, raw=raw,
+                           file_col=file_col, crop=crop, resize_width=resize_width, resize_height=resize_height, 
+                           normalize=normalize, batch_size=as.integer(batch_size), workers=as.integer(workers))
 }
