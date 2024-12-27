@@ -19,7 +19,7 @@ VALID_EXTENSIONS = c('.png', '.jpg', ',jpeg', ".tiff",
 #'
 #' @return files dataframe with or without file dates
 #' @export
-#' @importFrom dplyr %>%
+#' @importFrom magrittr %>%
 #'
 #' @examples
 #' \dontrun{
@@ -27,16 +27,15 @@ VALID_EXTENSIONS = c('.png', '.jpg', ',jpeg', ".tiff",
 #' }
 build_file_manifest <- function(image_dir, exif=True, out_file=NULL, 
                                 offset=0, recursive=TRUE) {
+  if (check_file(out_file)) { return(load_data(out_file)) }
   
-  if (checkFile(outfile)) { return(loadData(outfile)) }
-  
-  if (!dir.exists(imagedir)) { stop("The given directory does not exist.") }
+  if (!dir.exists(image_dir)) { stop("The given directory does not exist.") }
   
   # Reads files in directory and extracts their EXIF data
   if (exif) {
     files <- tryCatch( 
       {
-        exifr::read_exif(imagedir, recursive = recursive,
+        exifr::read_exif(image_dir, recursive = recursive,
                          tags = c("filename", "FileModifyDate", "CreateDate", 
                                   "File:ImageWidth", "File:ImageHeight"))
       },
@@ -45,18 +44,20 @@ build_file_manifest <- function(image_dir, exif=True, out_file=NULL,
       finally = {}
     )
     if (length(files) == 0) {
-      files <- list.files(imagedir, full.names = TRUE, recursive = recursive)
+      files <- list.files(image_dir, full.names = TRUE, recursive = recursive)
       files <- as.data.frame(files)
     }
     
     colnames(files)[1] <- "FilePath"
     files <- as.data.frame(files)
+    colnames(files)[colnames(files) == 'ImageWidth'] <- 'Width'
+    colnames(files)[colnames(files) == 'ImageHeight'] <- 'Height'
     
     files$FileModifyDate <- as.POSIXct(files$FileModifyDate, format="%Y:%m:%d %H:%M:%S") + (offset*3600)
     # establish datetime
     if ("CreateDate" %in% names(files)){
       files$CreateDate <- as.POSIXct(files$CreateDate, format="%Y:%m:%d %H:%M:%S")
-      files %>% dplyr::mutate("DateTime" = dplyr::coalesce(files$CreateDate, 
+      files <- files %>% dplyr::mutate("DateTime" = dplyr::coalesce(files$CreateDate, 
                                                            files$FileModifyDate))
     }
     # Unable to get CreateDate from exif
@@ -64,7 +65,7 @@ build_file_manifest <- function(image_dir, exif=True, out_file=NULL,
   }
   # return simple file list 
   else {
-    files <- list.files(imagedir, full.names = TRUE, recursive = recursive)
+    files <- list.files(image_dir, full.names = TRUE, recursive = recursive)
     files <- as.data.frame(files)
     colnames(files)[1] <- "FilePath"
     files$FileName <- sapply(files$FilePath, function(x) basename(x))
@@ -75,7 +76,7 @@ build_file_manifest <- function(image_dir, exif=True, out_file=NULL,
   files %>% filter(tolower(tools::file_ext(files$FileName)) %in% tolower(sub(".", "", VALID_EXTENSIONS, fixed = TRUE)))
   
   #save output
-  if (!is.null(outfile)) { saveData(files, outfile) }
+  if (!is.null(out_file)) { save_data(files, out_file) }
   
   return(files)
 }

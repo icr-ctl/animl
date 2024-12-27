@@ -17,7 +17,9 @@ sort_species(
 
 \item{link_dir}{Destination directory for symlinks}
 
-\item{file_col}{}
+\item{file_col}{Colun containing file paths}
+
+\item{unique_name}{Unique image name identifier}
 
 \item{copy}{Toggle to determine copy or hard link, defaults to link}
 }

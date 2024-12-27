@@ -7,7 +7,7 @@
 sort_MD(
   manifest,
   link_dir,
-  file_col = "file",
+  file_col = "FilePath",
   unique_name = "UniqueName",
   copy = FALSE
 )
@@ -17,9 +17,9 @@ sort_MD(
 
 \item{link_dir}{Destination directory for symlinks}
 
-\item{file_col}{}
+\item{file_col}{Colun containing file paths}
 
-\item{unique_name}{}
+\item{unique_name}{Unique image name identifier}
 
 \item{copy}{Toggle to determine copy or hard link, defaults to link}
 }

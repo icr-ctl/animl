@@ -54,6 +54,7 @@ load_data <- function(file) {
 #'   checkFile("path/to/newfile.csv")
 #' }
 check_file <- function(file) {
+  print(file)
   if (!is.null(file) && file.exists(file)) {
     date <- exifr::read_exif(file, tags = "FileModifyDate")[[2]]
     date <- strsplit(date, split = " ")[[1]][1]

@@ -67,9 +67,9 @@ detect_MD_batch <- function(detector, image_file_names, checkpoint_path=NULL, ch
 #' mdresults <- parseMD(mdres)
 #' }
 parse_MD <- function(results, manifest = NULL, out_file = NULL, buffer=0.02, threshold=0, file_col="Frame") {
-  if (checkFile(outfile)) { return(loadData(outfile))}
+  if (check_file(out_file)) { return(load_data(out_file))}
   
-  if (!is(mdresults, "list")) { stop("MD results input must be list") }
+  if (!is(results, "list")) { stop("MD results input must be list") }
     
   else{
     f <- function(data) {
@@ -88,7 +88,7 @@ parse_MD <- function(results, manifest = NULL, out_file = NULL, buffer=0.02, thr
           return(x)
       } 
       else {
-        return(data.frame(file = data$file, max_detection_conf:data$max_detection_conf,
+        return(data.frame(file = data$file, max_detection_conf=data$max_detection_conf,
                           category = 0, conf = NA, 
                           bbox1 = NA, bbox2 = NA, 
                           bbox3 = NA, bbox4 = NA, 
@@ -97,18 +97,21 @@ parse_MD <- function(results, manifest = NULL, out_file = NULL, buffer=0.02, thr
     }
     
     df <- do.call(rbind.data.frame, sapply(results, f, simplify = F))
+    print(df)
     
-    df$bbox1 <- min(max(df$bbox1, buffer), 1 - buffer)
-    df$bbox2 <- min(max(df$bbox2, buffer), 1 - buffer)
-    df$bbox3 <- min(max(df$bbox3, buffer), 1 - buffer)
-    df$bbox4 <- min(max(df$bbox4, buffer), 1 - buffer)
+    df$bbox2 <- sapply(df$bbox1, function(x) min(max(x, buffer), 1 - buffer))
+    df$bbox2 <- sapply(df$bbox2, function(x) min(max(x, buffer), 1 - buffer))
+    df$bbox3 <- sapply(df$bbox3, function(x) min(max(x, buffer), 1 - buffer))
+    df$bbox4 <- sapply(df$bbox4, function(x) min(max(x, buffer), 1 - buffer))
+
     
     # merge to manifest if given
     if (!is.null(manifest)) { df <- merge(manifest, df, by.x=file_col, by.y="file") } 
 
     # Save file
-    if (!is.null(out_file)) { saveData(df, out_file)}
+    if (!is.null(out_file)) { save_data(df, out_file)}
 
-    return(results) 
+    return(df) 
   }
 }
+

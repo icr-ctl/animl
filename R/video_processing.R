@@ -22,7 +22,7 @@ extract_frames <- function(files, out_dir = tempfile(), out_file = NULL,
                           fps = NULL, frames = NULL, file_col="FilePath", 
                           parallel = FALSE, workers = 1, checkpoint = 1000) {
 
-  if (checkFile(out_file)) { return(loadData(out_file)) } 
+  if (check_file(out_file)) { return(load_data(out_file)) } 
   
   #check if input is dataframe
   if (is(files, "data.frame")) { 
@@ -51,7 +51,7 @@ extract_frames <- function(files, out_dir = tempfile(), out_file = NULL,
 
     parallel::clusterEvalQ(cl, library(av))
     results <- pbapply::pblapply(filelist, function(x) {
-      try(extractFramesSingle(x, out_dir, fps=fps, frames=frames)) }, cl = cl)
+      try(extract_frame_single(x, out_dir, fps=fps, frames=frames)) }, cl = cl)
     parallel::stopCluster(cl)
     pbapply::pboptions(use_lb=FALSE)
     results <- do.call(rbind, results)
@@ -60,7 +60,7 @@ extract_frames <- function(files, out_dir = tempfile(), out_file = NULL,
     pb <- pbapply::startpb(1, nrow(videos))
     results <- data.frame(FilePath = character(), Frame = character())
     for(i in 1:nrow(videos)){
-      result <- extractFramesSingle(videos[i,]$FilePath, out_dir, fps=fps, frames=frames)
+      result <- extract_frame_single(videos[i,]$FilePath, out_dir, fps=fps, frames=frames)
       results <- rbind(results,result)
      
       # checkpoint
@@ -79,7 +79,7 @@ extract_frames <- function(files, out_dir = tempfile(), out_file = NULL,
   }
   else { allframes <- results }
   # save frames to files
-  if(!is.null(out_file)) { saveData(allframes, out_file) }
+  if(!is.null(out_file)) { save_data(allframes, out_file) }
 
   allframes
 }
