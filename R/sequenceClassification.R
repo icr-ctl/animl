@@ -124,7 +124,11 @@ sequenceClassification<-function(animals, empty=NULL, predictions, classes,
       pbapply::setpb(pb, i) 
       c=c+nrow(animals)/100
     }
+    
+    #rows pertaining to a sequence
     rows<-i
+    
+    #last row in current sequence
     j=i+1
     
     while(!is.na(animals$DateTime[j]) & !is.na(animals$DateTime[i]) & j<nrow(animals) & animals[j,stationcolumn]==animals[i,stationcolumn] & difftime(animals$DateTime[j],animals$DateTime[i],units="secs")<=maxdiff){
@@ -136,19 +140,22 @@ sequenceClassification<-function(animals, empty=NULL, predictions, classes,
       predclass<-apply(predsort[rows,],1,which.max)
       #check if there are empty predictions
       if(length(emptycol)==0 | !(emptycol %in% predclass) | length(which(predclass %in% emptycol))==length(rows)){
+        #no empties
         predsort2<-predsort[rows,]*animals$conf[rows]
         predbest<-apply(predsort2,2,mean)
         conf[rows]<-max(predsort2[,which.max(predbest)])
         predict[rows]<-classes[which.max(predbest)]
       }else{ #process sequences with some empty
-        #select images for which all boxes or frames are empty
+        #select files for which all boxes or frames are empty
         sel<-tapply(predclass==emptycol,animals[rows,recordfield],sum)==
           tapply(predclass==emptycol,animals[rows,recordfield],length)
         
-        #classify images with species
-        #boxes that are animals
+        #classify files with species
+        #records with animals and no empties
         sel2<-which(animals[rows,recordfield] %in% names(sel[!sel]) & !(predclass %in% emptycol))
+        #records in files with animals
         sel3<-which(animals[rows,recordfield] %in% names(sel[!sel]))
+        
         if(length(sel2)>0 & length(sel3)>0){
           predsort2<-matrix(predsort[rows[sel2],]*animals$conf[rows[sel2]],ncol=ncol(predsort))
           predbest<-apply(predsort2,2,mean)
@@ -156,7 +163,7 @@ sequenceClassification<-function(animals, empty=NULL, predictions, classes,
           predict[rows[sel3]]<-classes[which.max(predbest)]
         }
         
-        #classify empty images
+        #classify empty files
         for(s in names(sel[sel])){
           sel2<-which(animals[rows,recordfield] %in% s)
           predbest<-apply(matrix(predsort[rows[sel2],]*animals$conf[rows[sel2]],ncol=ncol(predsort)),2,mean) 
