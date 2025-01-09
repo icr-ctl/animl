@@ -32,8 +32,8 @@
 #'                                   emptyclass = "Empty",
 #'                                   stationcolumnumn="StationID", maxdiff=60)
 #' }
-sequenceClassification<-function(animals, empty=NULL, predictions, classes, 
-                                  emptyclass="", stationcolumn, sortcolumns=NULL,recordfield="FilePath", maxdiff=60){
+sequenceClassification<-function(animals, empty=NULL, predictions, classes, stationcolumn,
+                                  emptyclass="", sortcolumns=NULL,recordfield="FilePath", maxdiff=60){
   if (!is(animals, "data.frame")) {
     stop("'animals' must be a Data Frame.")
   }  
@@ -78,7 +78,7 @@ sequenceClassification<-function(animals, empty=NULL, predictions, classes,
     empty$ID<-1:nrow(empty)
     
     #create extended prediction matrix for empty, vehicles and human
-    predempty<-reshape(empty[,c("ID","prediction","confidence")],direction="wide",idvar="ID",timevar="prediction")
+    predempty<-stats::reshape(empty[,c("ID","prediction","confidence")],direction="wide",idvar="ID",timevar="prediction")
     predempty[is.na(predempty)]<-0
     predempty<-cbind(matrix(0,nrow=nrow(empty),ncol=dim(predictions)[2]),predempty[,-1])
     

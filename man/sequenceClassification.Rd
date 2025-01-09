@@ -9,9 +9,10 @@ sequenceClassification(
   empty = NULL,
   predictions,
   classes,
-  emptyclass = "",
   stationcolumn,
+  emptyclass = "",
   sortcolumns = NULL,
+  recordfield = "FilePath",
   maxdiff = 60
 )
 }
@@ -24,11 +25,13 @@ sequenceClassification(
 
 \item{classes}{a vector or species corresponding to the columns of 'predictions'}
 
-\item{emptyclass}{a string indicating the class that should be considered 'Empty'}
-
 \item{stationcolumn}{a column in the animals and empty data frame that indicates the camera or camera station}
 
+\item{emptyclass}{a string indicating the class that should be considered 'Empty'}
+
 \item{sortcolumns}{optional sort order. The default is 'stationcolumnumn' and DateTime.}
+
+\item{recordfield}{a field indicating a single record. The default is FilePath for single images/videos.}
 
 \item{maxdiff}{maximum difference between images in seconds to be included in a sequence, defaults to 60}
 }
