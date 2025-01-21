@@ -4,10 +4,6 @@
 #'
 #' Kyra Swanson 2023
 
-VALID_EXTENSIONS = c('.png', '.jpg', ',jpeg', ".tiff",
-                     ".mp4", ".avi", ".mov", ".wmv",
-                     ".mpg", ".mpeg", ".asf", ".m4v")
-
 
 #' Find Image/Video Files and Gather exif Data
 #'
@@ -27,6 +23,7 @@ VALID_EXTENSIONS = c('.png', '.jpg', ',jpeg', ".tiff",
 #' }
 build_file_manifest <- function(image_dir, exif=True, out_file=NULL, 
                                 offset=0, recursive=TRUE) {
+  
   if (check_file(out_file)) { return(load_data(out_file)) }
   
   if (!dir.exists(image_dir)) { stop("The given directory does not exist.") }
@@ -54,6 +51,7 @@ build_file_manifest <- function(image_dir, exif=True, out_file=NULL,
     colnames(files)[colnames(files) == 'ImageHeight'] <- 'Height'
     
     files$FileModifyDate <- as.POSIXct(files$FileModifyDate, format="%Y:%m:%d %H:%M:%S") + (offset*3600)
+    
     # establish datetime
     if ("CreateDate" %in% names(files)){
       files$CreateDate <- as.POSIXct(files$CreateDate, format="%Y:%m:%d %H:%M:%S")
@@ -68,12 +66,16 @@ build_file_manifest <- function(image_dir, exif=True, out_file=NULL,
     files <- list.files(image_dir, full.names = TRUE, recursive = recursive)
     files <- as.data.frame(files)
     colnames(files)[1] <- "FilePath"
-    files$FileName <- sapply(files$FilePath, function(x) basename(x))
-    
   }
-
+  
+  files$FileName <- sapply(files$FilePath, function(x) basename(x))
+  files$Extension <- sapply(files$FilePath, function(x) tolower(tools::file_ext(x)))
+  
   # only keep images and videos
-  files %>% filter(tolower(tools::file_ext(files$FileName)) %in% tolower(sub(".", "", VALID_EXTENSIONS, fixed = TRUE)))
+  VALID_EXTENSIONS = c('png', 'jpg', 'jpeg', "tiff",
+                       "mp4", "avi", "mov", "wmv",
+                       "mpg", "mpeg", "asf", "m4v")
+  files <- dplyr::filter(files, Extension %in% VALID_EXTENSIONS)
   
   #save output
   if (!is.null(out_file)) { save_data(files, out_file) }

@@ -95,15 +95,12 @@ parse_MD <- function(results, manifest = NULL, out_file = NULL, buffer=0.02, thr
                           stringsAsFactors = F))
       }
     }
-    
     df <- do.call(rbind.data.frame, sapply(results, f, simplify = F))
-    print(df)
     
-    df$bbox2 <- sapply(df$bbox1, function(x) min(max(x, buffer), 1 - buffer))
+    df$bbox1 <- sapply(df$bbox1, function(x) min(max(x, buffer), 1 - buffer))
     df$bbox2 <- sapply(df$bbox2, function(x) min(max(x, buffer), 1 - buffer))
     df$bbox3 <- sapply(df$bbox3, function(x) min(max(x, buffer), 1 - buffer))
     df$bbox4 <- sapply(df$bbox4, function(x) min(max(x, buffer), 1 - buffer))
-
     
     # merge to manifest if given
     if (!is.null(manifest)) { df <- merge(manifest, df, by.x=file_col, by.y="file") } 
