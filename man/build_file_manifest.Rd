@@ -2,7 +2,7 @@
 % Please edit documentation in R/file_management.R
 \name{build_file_manifest}
 \alias{build_file_manifest}
-\title{Find Image/Video Files and Gather exif Data}
+\title{File Management Module}
 \usage{
 build_file_manifest(
   image_dir,
@@ -27,6 +27,10 @@ build_file_manifest(
 files dataframe with or without file dates
 }
 \description{
+This module provides functions and classes for managing files and directories.
+}
+\details{
+Kyra Swanson 2023
 Find Image/Video Files and Gather exif Data
 }
 \examples{

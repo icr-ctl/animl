@@ -21,16 +21,12 @@ sort_species <- function(manifest, link_dir, file_col="FilePath", unique_name='U
   }
   
   if (!unique_name %in% names(manifest)) {
-    print(unique_name)
     manifest[unique_name] <- sapply( manifest[[file_col]], function(x) paste0(strsplit(basename(x), ".", fixed = T)[[1]][1],
                                                            "_", sprintf("%05d", round(stats::runif(1, 1, 99999), 0)),
                                                            ".", tools::file_ext(x)))
-    print(manifest)
     }
     
-  
   manifest$Link <- paste0(link_dir, manifest$prediction, "/", manifest[[unique_name]])
-  print(manifest$Link)
   
   # hard copy or link
   if (copy) { mapply(file.copy, manifest[[file_col]], manifest$Link, MoreArgs = list(copy.date=TRUE))}
@@ -66,11 +62,9 @@ sort_MD <- function(manifest, link_dir, file_col="FilePath", unique_name='Unique
   manifest$MD_prediction <- sapply(manifest$category, function(x) MDclasses[as.integer(x)+1])
   
   if (!unique_name %in% names(manifest)) {
-    print(unique_name)
     manifest[unique_name] <- sapply( manifest[[file_col]], function(x) paste0(strsplit(basename(x), ".", fixed = T)[[1]][1],
                                                                               "_", sprintf("%05d", round(stats::runif(1, 1, 99999), 0)),
                                                                               ".", tools::file_ext(x)))
-    print(manifest)
   }
   
   manifest$Link <- paste0(link_dir, manifest$MD_prediction, "/", manifest[[unique_name]])

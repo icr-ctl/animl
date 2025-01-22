@@ -11,11 +11,9 @@ library(animl)
 library(reticulate)
 use_condaenv("test")
 
-device <- 'cuda:0'
+imagedir <- "examples\\Southwest"
 
-imagedir <- "/home/kyra/animl-py/examples/Southwest"
-
-#create global variable file and directory names
+#create global variable file and directory namesfrom animl import file_management
 WorkingDirectory(imagedir,globalenv())
 
 # Build file manifest for all images and videos within base directory
@@ -23,15 +21,15 @@ files <- build_file_manifest(imagedir, out_file=filemanifest, exif=TRUE)
 
 #===============================================================================
 # Add Project-Specific Info
-#===============================================================================
+#====================================+==========================================
 
-#build new name
+# Get Station
 basedepth=length(strsplit(imagedir,split="/")[[1]])
-files$Region<-sapply(files$Directory,function(x)strsplit(x,"/")[[1]][basedepth])
+files$Station <- sapply(files$FilePath,function()strsplit(x,"/")[[1]][basedepth])
 
 # Process videos, extract frames for ID
 allframes <- extract_frames(files, out_dir = vidfdir, out_file=imageframes,
-                           frames=2, parallel=T, workers=parallel::detectCores())
+                           frames=1, parallel=F, workers=parallel::detectCores())
 
 #===============================================================================
 # MegaDetector
@@ -40,7 +38,7 @@ allframes <- extract_frames(files, out_dir = vidfdir, out_file=imageframes,
 # MD, specify detectObjectBatch with argument 'mdversion'.
 
 # PyTorch Via Animl-Py
-md_py <- megadetector("/mnt/machinelearning/megaDetector/md_v5a.0.0.pt")
+md_py <- megadetector("/home/kyra/animl-py/models/md_v5a.0.0.pt")
 
 mdraw <- detect_MD_batch(md_py, allframes)
 mdresults <- parse_MD(mdraw, manifest = allframes, out_file = detections)
@@ -53,16 +51,18 @@ empty <- get_empty(mdresults)
 # Species Classifier
 #===============================================================================
 
-southwest <- load_model('/mnt/machinelearning/Models/Southwest/v3/southwest_v3.pt',
-                       '/mnt/machinelearning/Models/Southwest/v3/southwest_v3_classes.csv', device=device)
+southwest <- load_model('/home/kyra/animl-py/models/sdzwa_southwest_v3.pt',
+                       '/home/kyra/animl-py/models/sdzwa_southwest_v3_classes.csv')
 
+# NO SEQUENCES/VIDEOS
+animals <- predict_species(animals, southwest[[1]], southwest[[2]], raw=FALSE)
+manifest <- rbind(animals, empty)
 
-animals <- predict_species(animals, southwest[[1]], southwest[[2]], device=device, raw=FALSE)
-
-manifest <- rbind(animals,empty)
+classes = southwest[[2]]$Code
 
 # Sequence Classification
-
+pred <- predict_species(animals, southwest[[1]], southwest[[2]], raw=TRUE)
+manifest <- sequenceClassification(animals, empty=empty, pred, classes, "Station", emptyclass="empty")
 
 
 #===============================================================================
@@ -70,18 +70,9 @@ manifest <- rbind(animals,empty)
 #===============================================================================
 
 #symlink species predictions
-alldata <- sort_species(animals, linkdir)
+alldata <- sort_species(manifest, linkdir)
 
 #symlink MD detections only
 sort_MD(manifest, linkdir)
-
-
-#===============================================================================
-# Export to Camera Base
-#===============================================================================
-
-
-
-
 
 

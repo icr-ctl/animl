@@ -41,7 +41,7 @@ load_model <- function(model_path, class_file, device=NULL, architecture="CTL"){
 #'
 #' @examples
 #' \dontrun{animals <- predictSpecies(animals, classifier[[1]], classifier[[2]], raw=FALSE)}
-predict_species <- function(detections, model, classes, device='cpu', out_file=NULL, raw=FALSE,
+predict_species <- function(detections, model, classes, device=NULL, out_file=NULL, raw=FALSE,
                            file_col='Frame', crop=TRUE, resize_width=299, resize_height=299,
                            normalize=TRUE, batch_size=1, workers=1){
   
