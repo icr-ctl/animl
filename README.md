@@ -62,14 +62,25 @@ model_file <- "/Models/Southwest/v3/southwest_v3.pt"
 class_list <- "/Models/Southwest/v3/southwest_v3_classes.csv"
 
 # load the model
-southwest <- load_model(model_file, class_list, device="cuda")
+southwest <- load_model(model_file, class_list)
 
 # obtain species predictions
-animals <- predict_species(animals, southwest[[1]], southwest[[2]], device=device, raw=FALSE)
+animals <- predict_species(animals, southwest[[1]], southwest[[2]], raw=FALSE)
 
 # recombine animal detections with remaining detections
 manifest <- rbind(animals,empty)
 
+```
+
+If your data includes videos or sequences, we recommend using the sequenceClassification algorithm.
+This requires the raw output of the prediction algorithm.
+
+```
+classes = southwest[[2]]$Code
+
+# Sequence Classification
+pred <- predict_species(animals, southwest[[1]], southwest[[2]], raw=TRUE)
+manifest <- sequenceClassification(animals, empty=empty, pred, classes, "Station", emptyclass="empty")
 ```
 
 # Models
@@ -89,9 +100,10 @@ The Conservation Technology Lab has several models available for use.
 * R >= 4.0
 * Reticulate
 * Python >= 3.9
-* [Animl-Py = 1.4.0](https://github.com/conservationtechlab/animl-py)
+* [Animl-Py = 1.4.3](https://github.com/conservationtechlab/animl-py)
 
 We recommend running animl on a computer with a dedicated GPU.
+Animl also depends on [exiftool](https://exiftool.org/index.html) for accessing file metadata.
 
 #### Python
 animl depends on python and will install python package dependencies if they are not available if installed via CRAN. <br> 
@@ -99,14 +111,19 @@ However, we recommend setting up a conda environment using the provided config f
 
 [Instructions to install conda](https://conda.io/projects/conda/en/latest/user-guide/install/index.html)
 
-The file **animl-env.yml** describes the python version and various dependencies with specific version numbers. 
-To create the enviroment, from within the animl directory run the following line in a terminal:
-```
-conda env create -f animl-env.yml
-```
-The first line creates the enviroment from the specifications file which only needs to be done once. 
-This environment is also necessary for the [python version of animl.](https://pypi.org/project/animl/) 
+The R version of animl depends on the python version to handle the machine learning:
+[animl-py](https://github.com/conservationtechlab/animl-py)
 
+Next, install animl-py in your preferred python environment (such as conda) using pip:
+```
+pip install animl
+```
+
+Animl-r can be installed through CRAN:
+```R
+install.packages('animl')
+```
+Animl-r can also be installed by downloading this repo, opening the animl.Rproj file in RStudio and selecting Build -> Install Package.
 
 
 ### Contributors
