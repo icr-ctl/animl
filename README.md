@@ -1,4 +1,4 @@
-# animl v1.0.0
+# animl v2.0.0
 
 Animl comprises a variety of machine learning tools for analyzing ecological data. The package includes a set of functions to classify subjects within camera trap field data and can handle both images and videos. 
 
@@ -21,16 +21,14 @@ library(animl)
 imagedir <- "examples/TestData"
 
 #create save-file placeholders and working directories
-setupDirectory(imagedir)
+WorkingDirectory(imagedir,globalenv())
 
 # Read exif data for all images within base directory
-files <- buildFileManifest(imagedir)
-
-# Set Region/Site/Camera names based on folder hierarchy
-files <- setLocation(files,imagedir)
+files <- build_file_manifest(imagedir, out_file=filemanifest, exif=TRUE)
 
 # Process videos, extract frames for ID
-imagesall<-imagesFromVideos(files,outdir=vidfdir,frames=5)
+allframes <- extract_frames(files, out_dir = vidfdir, out_file=imageframes,
+                           frames=2, parallel=T, workers=parallel::detectCores())
 ```
 #### 2. Object Detection
 
@@ -41,18 +39,13 @@ A version of MegaDetector compatible with tensorflow can obtained from [our serv
 More info on [MegaDetector](https://github.com/agentmorris/MegaDetector/tree/main).
 ```R
 #Load the Megadetector model
-mdsession<-loadMDModel("/path/to/megaDetector/mdv5_.pb")
+md_py <- megadetector("/mnt/machinelearning/megaDetector/md_v5a.0.0.pt")
 
-#+++++++++++++++++++++
-# Classify a single image to make sure everything works before continuing
-testMD(imagesall,mdsession)
-#+++++++++++++++++++++
-
-# Obtain crop information for each image, checkpoint MegaDetector after every 2500 images
-mdres <- classifyImagesBatchMD(mdsession,imagesall$Frame,resultsfile=paste0(datadir,mdresults),checkpoint = 2500)
+# Obtain crop information for each image
+mdraw <- detect_MD_batch(md_py, allframes)
 
 # Add crop information to dataframe
-imagesall <- parseMDsimple(imagesall, mdres)
+mdresults <- parse_MD(mdraw, manifest = allframes, out_file = detections)
 
 ```
 #### 3. Classification
@@ -60,24 +53,22 @@ Then feed the crops into the classifier. We recommend only classifying crops ide
 
 ```R
 # Pull out animal crops
-animals <- imagesall[imagesall$max_detection_category==1,]
+animals <- get_animals(mdresults)
 
 # Set of crops with MD human, vehicle and empty MD predictions. 
-empty <- setEmpty(imagesall)
+empty <- get_empty(mdresults)
 
+model_file <- "/Models/Southwest/v3/southwest_v3.pt"
+class_list <- "/Models/Southwest/v3/southwest_v3_classes.csv"
 
-modelfile <- "/Models/Southwest/EfficientNetB5_456_Unfrozen_01_0.58_0.82.h5"
+# load the model
+southwest <- load_model(model_file, class_list, device="cuda")
 
-# Obtain predictions for each animal crop
-pred<-classifySpecies(animals,modelfile,resize=456,standardize=FALSE,batch_size = 64,workers=8)
+# obtain species predictions
+animals <- predict_species(animals, southwest[[1]], southwest[[2]], device=device, raw=FALSE)
 
-# Apply human-readable class name to dataframe
-# Classes are stored as text file
-# Returns a table with number of crops identified for each species
-alldata <- applyPredictions(animals,empty,"/Models/Southwest/classes.txt",pred, counts = TRUE)
-
-# Lastly pool crops to get one prediction per file
-alldata <- poolCrops(alldata)
+# recombine animal detections with remaining detections
+manifest <- rbind(animals,empty)
 
 ```
 
@@ -88,15 +79,17 @@ The Conservation Technology Lab has several models available for use.
 * Southwest United States [v3](https://sandiegozoo.box.com/s/0mait8k3san3jvet8251mpz8svqyjnc3)
 * [Amazon](https://sandiegozoo.box.com/s/dfc3ozdslku1ekahvz635kjloaaeopfl)
 * [Savannah](https://sandiegozoo.box.com/s/ai6yu45jgvc0to41xzd26moqh8amb4vw)
+* [Andes](https://sandiegozoo.box.com/s/kvg89qh5xcg1m9hqbbvftw1zd05uwm07)
 * [MegaDetector](https://github.com/agentmorris/MegaDetector/releases/download/v5.0/md_v5a.0.0.pt)
 
 
 ## Installation
 
 #### Requirements
-* R >= 4.0 
-* Python >= 3.7
-* Tensorflow >= 2.5
+* R >= 4.0
+* Reticulate
+* Python >= 3.9
+* [Animl-Py = 1.4.0](https://github.com/conservationtechlab/animl-py)
 
 We recommend running animl on a computer with a dedicated GPU.
 
