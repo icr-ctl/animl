@@ -36,11 +36,6 @@ extract_frames <- function(files, out_dir = tempfile(), out_file = NULL,
 
 
 
-
-
-
-
-
 #' Extract frames from video for classification
 #'
 #' This function can take

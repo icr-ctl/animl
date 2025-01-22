@@ -9,11 +9,11 @@
 #-------------------------------------------------------------------------------
 library(animl)
 library(reticulate)
-use_condaenv("animl-gpu")
+use_condaenv("test")
 
-imagedir <- "/home/kyra/animl-r/examples/Southwest"
+imagedir <- "examples\\Southwest"
 
-#create global variable file and directory names
+#create global variable file and directory namesfrom animl import file_management
 WorkingDirectory(imagedir,globalenv())
 
 # Build file manifest for all images and videos within base directory
@@ -25,7 +25,7 @@ files <- build_file_manifest(imagedir, out_file=filemanifest, exif=TRUE)
 
 # Get Station
 basedepth=length(strsplit(imagedir,split="/")[[1]])
-files$Station <- sapply(files$FilePath,function(x)strsplit(x,"/")[[1]][basedepth])
+files$Station <- sapply(files$FilePath,function()strsplit(x,"/")[[1]][basedepth])
 
 # Process videos, extract frames for ID
 allframes <- extract_frames(files, out_dir = vidfdir, out_file=imageframes,
@@ -54,15 +54,14 @@ empty <- get_empty(mdresults)
 southwest <- load_model('/home/kyra/animl-py/models/sdzwa_southwest_v3.pt',
                        '/home/kyra/animl-py/models/sdzwa_southwest_v3_classes.csv')
 
-
 # NO SEQUENCES/VIDEOS
-animals <- predict_species(animals, southwest[[1]], southwest[[2]], device="cuda:0", raw=FALSE)
+animals <- predict_species(animals, southwest[[1]], southwest[[2]], raw=FALSE)
 manifest <- rbind(animals, empty)
 
 classes = southwest[[2]]$Code
 
 # Sequence Classification
-pred <- predict_species(animals, southwest[[1]], southwest[[2]], device="cuda:0", raw=TRUE)
+pred <- predict_species(animals, southwest[[1]], southwest[[2]], raw=TRUE)
 manifest <- sequenceClassification(animals, empty=empty, pred, classes, "Station", emptyclass="empty")
 
 
